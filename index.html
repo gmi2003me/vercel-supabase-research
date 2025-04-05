@@ -42,7 +42,7 @@
 
         async function initializeSupabase() {
             const { supabaseUrl, supabaseAnonKey } = await fetchSupabaseConfig();
-            supabase = supabase.createClient(supabaseUrl, supabaseAnonKey); // Correctly initialize supabase
+            supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey); // Correctly initialize supabase
             fetchUsers(); // Fetch users after initialization
         }
 
