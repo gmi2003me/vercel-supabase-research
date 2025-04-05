@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input { margin: 5px; }
+        button { margin: 5px; }
+        table { margin-top: 20px; border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>User Management</h1>
+    <input type="text" id="firstName" placeholder="First Name" required>
+    <input type="text" id="lastName" placeholder="Last Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <button onclick="addUser()">Add User</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        async function fetchSupabaseConfig() {
+            const response = await fetch('/api/supabase');
+            return await response.json();
+        }
+
+        async function initializeSupabase() {
+            const { supabaseUrl, supabaseAnonKey } = await fetchSupabaseConfig();
+            return supabase.createClient(supabaseUrl, supabaseAnonKey);
+        }
+
+        async function fetchUsers(supabase) {
+            const { data: users, error } = await supabase.from('users').select('*');
+            if (error) console.error(error);
+            else {
+                const userTableBody = document.getElementById('userTableBody');
+                userTableBody.innerHTML = '';
+                users.forEach(user => {
+                    userTableBody.innerHTML += `
+                        <tr>
+                            <td>${user.first_name}</td>
+                            <td>${user.last_name}</td>
+                            <td>${user.email}</td>
+                            <td>
+                                <button onclick="deleteUser(${user.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        async function addUser(supabase) {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+
+            const { data, error } = await supabase.from('users').insert([{ first_name: firstName, last_name: lastName, email }]);
+            if (error) console.error(error);
+            else {
+                document.getElementById('firstName').value = '';
+                document.getElementById('lastName').value = '';
+                document.getElementById('email').value = '';
+                fetchUsers(supabase);
+            }
+        }
+
+        async function deleteUser(id) {
+            const supabase = await initializeSupabase();
+            const { data, error } = await supabase.from('users').delete().match({ id });
+            if (error) console.error(error);
+            else fetchUsers(supabase);
+        }
+
+        // Initialize Supabase and fetch users on page load
+        initializeSupabase().then(supabase => fetchUsers(supabase));
+    </script>
+</body>
+</html>
