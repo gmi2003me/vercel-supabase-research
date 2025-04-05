@@ -17,7 +17,7 @@
     <input type="text" id="firstName" placeholder="First Name" required>
     <input type="text" id="lastName" placeholder="Last Name" required>
     <input type="email" id="email" placeholder="Email" required>
-    <button onclick="addUser()">Add User</button>
+    <button id="addUserButton">Add User</button>
 
     <table>
         <thead>
@@ -33,6 +33,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script>
+        let supabase; // Declare supabase variable in a higher scope
+
         async function fetchSupabaseConfig() {
             const response = await fetch('/api/supabase');
             return await response.json();
@@ -40,10 +42,11 @@
 
         async function initializeSupabase() {
             const { supabaseUrl, supabaseAnonKey } = await fetchSupabaseConfig();
-            return supabase.createClient(supabaseUrl, supabaseAnonKey);
+            supabase = supabase.createClient(supabaseUrl, supabaseAnonKey); // Initialize supabase
+            fetchUsers(); // Fetch users after initialization
         }
 
-        async function fetchUsers(supabase) {
+        async function fetchUsers() {
             const { data: users, error } = await supabase.from('users').select('*');
             if (error) console.error(error);
             else {
@@ -64,7 +67,7 @@
             }
         }
 
-        async function addUser(supabase) {
+        async function addUser() {
             const firstName = document.getElementById('firstName').value;
             const lastName = document.getElementById('lastName').value;
             const email = document.getElementById('email').value;
@@ -75,19 +78,20 @@
                 document.getElementById('firstName').value = '';
                 document.getElementById('lastName').value = '';
                 document.getElementById('email').value = '';
-                fetchUsers(supabase);
+                fetchUsers();
             }
         }
 
         async function deleteUser(id) {
-            const supabase = await initializeSupabase();
             const { data, error } = await supabase.from('users').delete().match({ id });
             if (error) console.error(error);
-            else fetchUsers(supabase);
+            else fetchUsers();
         }
 
-        // Initialize Supabase and fetch users on page load
-        initializeSupabase().then(supabase => fetchUsers(supabase));
+        // Initialize Supabase and set up event listener on page load
+        initializeSupabase().then(() => {
+            document.getElementById('addUserButton').onclick = addUser; // Set onclick after initialization
+        });
     </script>
 </body>
 </html>
